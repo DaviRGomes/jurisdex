@@ -1,0 +1,20 @@
+# Usa Node como base
+FROM node:18-slim
+
+# Define diretório de trabalho
+WORKDIR /app
+
+# Copia package.json e package-lock.json primeiro (para cache eficiente)
+COPY package*.json ./
+
+# Instala dependências
+RUN npm install
+
+# Copia o resto do código
+COPY . .
+
+# Expõe a porta que o servidor usa
+EXPOSE 3000
+
+# Comando para rodar
+CMD ["node", "server.js"]
