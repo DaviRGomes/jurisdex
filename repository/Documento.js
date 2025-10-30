@@ -1,5 +1,4 @@
-const db = require('../db/dbConfig');
-
+import db from '../database/dbConfig.js';
 
 class DocumentoRepository {
     async getAll() {
@@ -47,5 +46,4 @@ class DocumentoRepository {
     }
 }
 
-import db from '../database/dbConfig.js';
 export default new DocumentoRepository();
