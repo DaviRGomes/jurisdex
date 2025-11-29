@@ -5,7 +5,11 @@ class AudienciaController {
 
   getAll = async (req, res) => {
     try {
-      const audiencias = await this.service.getAll();
+      const { id, email, papel } = req.user || {};
+      const isAdmin = String(papel).toUpperCase() === 'ADMIN';
+      const audiencias = isAdmin
+        ? await this.service.getAll()
+        : await this.service.getMine({ userId: id, email });
       res.status(200).json(audiencias);
     } catch (error) {
       res.status(error.status || 500).json({ message: error.message || 'Erro interno do servidor' });

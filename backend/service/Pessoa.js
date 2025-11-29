@@ -12,6 +12,17 @@ class PessoaService {
     return pessoas;
   }
 
+  async getMine({ userId, email, papel }) {
+    const isAdmin = String(papel || '').toUpperCase() === 'ADMIN'
+    const pessoas = isAdmin
+      ? await this.repository.getAll()
+      : await this.repository.getMine(Number(userId), String(email))
+    if (!pessoas || pessoas.length === 0) {
+      throw { status: 404, message: 'Nenhuma pessoa encontrada' };
+    }
+    return pessoas;
+  }
+
   async getById(id) {
     if (!id) throw { status: 400, message: 'ID é obrigatório' };
     const pessoa = await this.repository.getById(Number(id));

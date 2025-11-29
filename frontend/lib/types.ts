@@ -52,6 +52,7 @@ export interface TVara {
 export interface TAndamento {
   id: number
   id_processo: number
+  numero_processo?: string
   data_registro: string
   descricao: string
   tipo_andamento: string
@@ -79,6 +80,7 @@ export interface TLocalizacaoFisica {
 export interface TParte {
   id: number
   id_processo: number
+  numero_processo?: string
   id_usuario?: number
   id_pessoa?: number
   id_papel: number

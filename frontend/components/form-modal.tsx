@@ -22,7 +22,7 @@ import {
 interface FormField {
   name: string
   label: string
-  type: 'text' | 'email' | 'password' | 'date' | 'select'
+  type: 'text' | 'email' | 'password' | 'date' | 'select' | 'file'
   required?: boolean
   options?: Array<{ value: string; label: string }>
 }
@@ -97,6 +97,13 @@ export function FormModal({
                     ))}
                   </SelectContent>
                 </Select>
+              ) : field.type === 'file' ? (
+                <Input
+                  id={field.name}
+                  type="file"
+                  onChange={(e) => handleInputChange(field.name, e.target.files?.[0] || null)}
+                  required={field.required}
+                />
               ) : (
                 <Input
                   id={field.name}

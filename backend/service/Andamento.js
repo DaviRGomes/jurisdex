@@ -12,6 +12,14 @@ class AndamentoService {
     return andamentos;
   }
 
+  async getMine({ userId, email }) {
+    const andamentos = await this.repository.getMine(Number(userId), String(email));
+    if (!andamentos || andamentos.length === 0) {
+      throw { status: 404, message: 'Nenhum andamento encontrado' };
+    }
+    return andamentos;
+  }
+
   async getById(id) {
     if (!id) throw { status: 400, message: 'ID é obrigatório' };
     const andamento = await this.repository.getById(Number(id));

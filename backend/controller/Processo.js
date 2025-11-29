@@ -5,8 +5,22 @@ class ProcessoController {
 
   getAll = async (req, res) => {
     try {
-      const processos = await this.service.getAll();
+      const { id, email, papel } = req.user || {};
+      const isAdmin = String(papel).toUpperCase() === 'ADMIN';
+      const processos = isAdmin
+        ? await this.service.getAll()
+        : await this.service.getMine({ userId: id, email, papel });
       res.status(200).json(processos);
+    } catch (error) {
+      res.status(error.status || 500).json({ message: error.message || 'Erro interno do servidor' });
+    }
+  };
+
+  count = async (req, res) => {
+    try {
+      const { id, email, papel } = req.user || {};
+      const total = await this.service.getCount({ userId: id, email, papel });
+      res.status(200).json({ count: total });
     } catch (error) {
       res.status(error.status || 500).json({ message: error.message || 'Erro interno do servidor' });
     }
@@ -26,6 +40,23 @@ class ProcessoController {
     try {
       const payload = req.body;
       const created = await this.service.create(payload);
+
+      const { id: userId, email, papel } = req.user || {};
+      if (userId || email) {
+        const papelMap = { ADVOGADO: 1, PROMOTOR: 2, JUIZ: 3, DEFENSOR_PUBLICO: 4, ADMIN: 1 };
+        const id_papel = papelMap[papel] || 1;
+        try {
+          await parteService.create({
+            id_processo: created.id,
+            id_usuario: userId,
+            id_papel,
+            data_criacao: new Date().toISOString(),
+            criado_por: email,
+          });
+        } catch (e) {
+        }
+      }
+
       res.status(201).json(created);
     } catch (error) {
       res.status(error.status || 500).json({ message: error.message || 'Erro interno do servidor' });
@@ -55,4 +86,5 @@ class ProcessoController {
 }
 
 import service from '../service/Processo.js';
+import parteService from '../service/Parte.js';
 export default new ProcessoController();

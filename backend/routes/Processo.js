@@ -5,6 +5,7 @@ const router = express.Router();
 const processoController = controller;
 
 router.get('/', processoController.getAll);
+router.get('/count', processoController.count);
 router.get('/:id', processoController.getById);
 router.post('/', processoController.create);
 router.put('/:id', processoController.update);

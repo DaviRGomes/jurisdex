@@ -1,10 +1,11 @@
 import { TDocumento, TUsuario, TPessoa, TProcesso, TTipoDocumento, TVara, TAndamento, TAudiencia, TLocalizacaoFisica, TParte } from './types'
 
-const API_BASE_URL = 'http://localhost:3000'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'
 
 interface FetchOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
   body?: unknown
+  headers?: Record<string, string>
 }
 
 async function apiCall<T>(endpoint: string, options: FetchOptions = {}): Promise<T> {
@@ -13,6 +14,8 @@ async function apiCall<T>(endpoint: string, options: FetchOptions = {}): Promise
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
   }
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+  if (token) headers['Authorization'] = `Bearer ${token}`
 
   const config: RequestInit = {
     method,
@@ -27,6 +30,15 @@ async function apiCall<T>(endpoint: string, options: FetchOptions = {}): Promise
 
   if (!response.ok) {
     const error = await response.json().catch(() => ({}))
+    if (response.status === 401 && typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        if (typeof window !== 'undefined' && window.location.pathname !== '/login') {
+          window.location.href = '/login'
+        }
+      } catch {}
+    }
     throw new Error(error.message || `API error: ${response.status}`)
   }
 
@@ -38,18 +50,59 @@ export const apiService = {
     check: () => apiCall<string>('/'),
   },
 
+  auth: {
+    login: async (email: string, senha: string) => {
+      const result = await apiCall<{ token: string; user: TUsuario }>(
+        '/usuario/login',
+        { method: 'POST', body: { email, senha } },
+      )
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('token', result.token)
+        localStorage.setItem('user', JSON.stringify(result.user))
+      }
+      return result
+    },
+    logout: () => {
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+      }
+    },
+  },
+
+
+
   // Documento endpoints
   documento: {
     list: () => apiCall<TDocumento[]>('/documento/'),
     getById: (id: number) => apiCall<TDocumento>(`/documento/${id}`),
     create: (data: Partial<TDocumento>) => apiCall<TDocumento>('/documento/', { method: 'POST', body: data }),
+    upload: async (payload: { nome: string; tipo: string; id_processo: number; file: File }) => {
+      const fd = new FormData()
+      fd.append('nome', payload.nome)
+      fd.append('tipo', payload.tipo)
+      fd.append('id_processo', String(payload.id_processo))
+      fd.append('file', payload.file)
+      const headers: Record<string, string> = {}
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+      if (token) headers['Authorization'] = `Bearer ${token}`
+      const response = await fetch(`${API_BASE_URL}/documento/upload`, { method: 'POST', body: fd, headers })
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.message || `API error: ${response.status}`)
+      }
+      return response.json()
+    },
     update: (id: number, data: Partial<TDocumento>) => apiCall<TDocumento>(`/documento/${id}`, { method: 'PUT', body: data }),
     delete: (id: number) => apiCall(`/documento/${id}`, { method: 'DELETE' }),
   },
 
   // Usuario endpoints
   usuario: {
-    list: () => apiCall<TUsuario[]>('/usuario/'),
+    list: async () => {
+      const data = await apiCall<TUsuario[]>('/usuario/')
+      return data
+    },
     getById: (id: number) => apiCall<TUsuario>(`/usuario/${id}`),
     create: (data: Partial<TUsuario>) => apiCall<TUsuario>('/usuario/', { method: 'POST', body: data }),
     update: (id: number, data: Partial<TUsuario>) => apiCall<TUsuario>(`/usuario/${id}`, { method: 'PUT', body: data }),
@@ -59,6 +112,7 @@ export const apiService = {
   // Processo endpoints
   processo: {
     list: () => apiCall<TProcesso[]>('/processo/'),
+    count: () => apiCall<{ count: number }>('/processo/count'),
     getById: (id: number) => apiCall<TProcesso>(`/processo/${id}`),
     create: (data: Partial<TProcesso>) => apiCall<TProcesso>('/processo/', { method: 'POST', body: data }),
     update: (id: number, data: Partial<TProcesso>) => apiCall<TProcesso>(`/processo/${id}`, { method: 'PUT', body: data }),
@@ -69,6 +123,7 @@ export const apiService = {
     list: () => apiCall<TPessoa[]>('/pessoa/'),
     getById: (id: number) => apiCall<TPessoa>(`/pessoa/${id}`),
     create: (data: Partial<TPessoa>) => apiCall<TPessoa>('/pessoa/', { method: 'POST', body: data }),
+    addParte: (pessoaId: number, data: Partial<TParte>) => apiCall<TParte>(`/pessoa/${pessoaId}/partes`, { method: 'POST', body: data }),
     update: (id: number, data: Partial<TPessoa>) => apiCall<TPessoa>(`/pessoa/${id}`, { method: 'PUT', body: data }),
     delete: (id: number) => apiCall(`/pessoa/${id}`, { method: 'DELETE' }),
   },

@@ -12,6 +12,14 @@ class AudienciaService {
     return audiencias;
   }
 
+  async getMine({ userId, email }) {
+    const audiencias = await this.repository.getMine(Number(userId), String(email));
+    if (!audiencias || audiencias.length === 0) {
+      throw { status: 404, message: 'Nenhuma audiência encontrada' };
+    }
+    return audiencias;
+  }
+
   async getById(id) {
     if (!id) throw { status: 400, message: 'ID é obrigatório' };
     const audiencia = await this.repository.getById(Number(id));

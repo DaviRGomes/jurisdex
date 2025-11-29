@@ -52,6 +52,16 @@ class UsuarioController {
       res.status(error.status || 500).json({ message: error.message || 'Erro interno do servidor' });
     }
   };
+
+  login = async (req, res) => {
+    try {
+      const { email, senha } = req.body;
+      const result = await this.service.login(email, senha);
+      res.status(200).json(result);
+    } catch (error) {
+      res.status(error.status || 500).json({ message: error.message || 'Erro interno do servidor' });
+    }
+  };
 }
 
 import service from '../service/Usuario.js';

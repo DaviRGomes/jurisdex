@@ -5,7 +5,8 @@ class LocalizacaoFisicaController {
 
   getAll = async (req, res) => {
     try {
-      const localizacoes = await this.service.getAll();
+      const { id, email } = req.user || {};
+      const localizacoes = await this.service.getMine({ userId: id, email });
       res.status(200).json(localizacoes);
     } catch (error) {
       res.status(error.status || 500).json({ message: error.message || 'Erro interno do servidor' });

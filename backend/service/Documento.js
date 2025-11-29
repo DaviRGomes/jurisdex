@@ -12,6 +12,14 @@ class DocumentoService {
         return documentos;
     }
 
+    async getMine({ userId, email }) {
+        const documentos = await this.repository.getMine(Number(userId), String(email));
+        if (!documentos || documentos.length === 0) {
+            throw { status: 404, message: 'Nenhum documento encontrado' };
+        }
+        return documentos;
+    }
+
     async getById(id) {
         if (!id) throw { status: 400, message: 'ID é obrigatório' };
         const doc = await this.repository.getById(id);
@@ -30,25 +38,26 @@ class DocumentoService {
 
         const doc = new Documento(payload);
 
-        if (!doc.nome || !doc.tipo || !doc.url_arquivo) {
-            throw { status: 400, message: 'nome, tipo e url_arquivo são obrigatórios' };
+        if (!doc.nome || !doc.tipo || !doc.url_arquivo || !doc.id_processo) {
+            throw { status: 400, message: 'nome, tipo, url_arquivo e id_processo são obrigatórios' };
         }
 
         const created = await this.repository.create({
             nome: doc.nome,
             tipo: doc.tipo,
-            url_arquivo: doc.url_arquivo
+            url_arquivo: doc.url_arquivo,
+            id_processo: Number(doc.id_processo)
         });
 
         return created;
     }
 
-    async update(id, { nome, tipo, url_arquivo }) {
+    async update(id, { nome, tipo, url_arquivo, id_processo }) {
         if (!id) throw { status: 400, message: 'ID é obrigatório' };
-        if (!nome || !tipo || !url_arquivo) throw { status: 400, message: 'nome, tipo e url_arquivo são obrigatórios' };
+        if (!nome || !tipo || !url_arquivo || !id_processo) throw { status: 400, message: 'nome, tipo, url_arquivo e id_processo são obrigatórios' };
         const existing = await this.repository.getById(id);
         if (!existing) throw { status: 404, message: 'Documento não encontrado para atualização' };
-        const updated = await this.repository.update(id, { nome, tipo, url_arquivo });
+        const updated = await this.repository.update(id, { nome, tipo, url_arquivo, id_processo: Number(id_processo) });
         return updated;
     }
 

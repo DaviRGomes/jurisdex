@@ -5,6 +5,20 @@ class AudienciaRepository {
     return result.rows;
   }
 
+  async getMine(userId, email) {
+    const query = `
+      SELECT a.id, a.id_processo, a.data, a.tipo, a.resultado, a.id_juiz
+      FROM audiencias a
+      WHERE a.id_juiz = $1 OR EXISTS (
+        SELECT 1 FROM partes pa
+        WHERE pa.id_processo = a.id_processo
+          AND (pa.id_usuario = $1 OR pa.criado_por = $2)
+      )
+    `;
+    const result = await db.query(query, [userId, email]);
+    return result.rows;
+  }
+
   async getById(id) {
     const query = 'SELECT id, id_processo, data, tipo, resultado, id_juiz FROM audiencias WHERE id = $1';
     const result = await db.query(query, [id]);

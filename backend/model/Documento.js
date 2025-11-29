@@ -11,15 +11,17 @@ export default class Documento {
     #nome;
     #tipo;
     #url_arquivo;
+    #id_processo;
     #id_tipo_documento; // FK para TipoDocumento
     #data_criacao;
     #criado_por;        // ID do Usuário que criou
 
-    constructor({ id, nome, tipo, url_arquivo, id_tipo_documento, data_criacao, criado_por } = {}) {
+    constructor({ id, nome, tipo, url_arquivo, id_processo, id_tipo_documento, data_criacao, criado_por } = {}) {
         this.id = id;
         this.nome = nome;
         this.tipo = tipo;
         this.url_arquivo = url_arquivo;
+        this.id_processo = id_processo;
         this.id_tipo_documento = id_tipo_documento;
         this.data_criacao = data_criacao;
         this.criado_por = criado_por;
@@ -39,6 +41,9 @@ export default class Documento {
     
     get url_arquivo() { return this.#url_arquivo; }
     set url_arquivo(value) { this.#url_arquivo = value; }
+
+    get id_processo() { return this.#id_processo; }
+    set id_processo(value) { this.#id_processo = value; }
 
     get id_tipo_documento() { return this.#id_tipo_documento; }
     set id_tipo_documento(value) { this.#id_tipo_documento = value; }

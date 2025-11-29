@@ -5,7 +5,11 @@ class PessoaController {
 
   getAll = async (req, res) => {
     try {
-      const pessoas = await this.service.getAll();
+      const { id, email, papel } = req.user || {};
+      const isAdmin = String(papel).toUpperCase() === 'ADMIN';
+      const pessoas = isAdmin
+        ? await this.service.getAll()
+        : await this.service.getMine({ userId: id, email });
       res.status(200).json(pessoas);
     } catch (error) {
       res.status(error.status || 500).json({ message: error.message || 'Erro interno do servidor' });
@@ -52,7 +56,29 @@ class PessoaController {
       res.status(error.status || 500).json({ message: error.message || 'Erro interno do servidor' });
     }
   };
+
+  getPartesByPessoaId = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const partes = await parteService.getByPessoaId(Number(id));
+      res.status(200).json(partes);
+    } catch (error) {
+      res.status(error.status || 500).json({ message: error.message || 'Erro interno do servidor' });
+    }
+  };
+
+  createParteForPessoa = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const payload = { ...req.body, id_pessoa: Number(id), id_usuario: undefined };
+      const created = await parteService.create(payload);
+      res.status(201).json(created);
+    } catch (error) {
+      res.status(error.status || 500).json({ message: error.message || 'Erro interno do servidor' });
+    }
+  };
 }
 
 import service from '../service/Pessoa.js';
+import parteService from '../service/Parte.js';
 export default new PessoaController();

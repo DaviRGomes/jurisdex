@@ -2,12 +2,19 @@ class UsuarioRepository {
   async getAll() {
     const query = 'SELECT id, nome, email, senha, papel_sistema FROM usuario';
     const result = await db.query(query);
+    console.log('UsuarioRepository.getAll rows:', result.rows.length);
     return result.rows;
   }
 
   async getById(id) {
     const query = 'SELECT id, nome, email, senha, papel_sistema FROM usuario WHERE id = $1';
     const result = await db.query(query, [id]);
+    return result.rows[0];
+  }
+
+  async getByEmail(email) {
+    const query = 'SELECT id, nome, email, senha, papel_sistema FROM usuario WHERE email = $1';
+    const result = await db.query(query, [email]);
     return result.rows[0];
   }
 

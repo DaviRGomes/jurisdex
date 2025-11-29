@@ -2,16 +2,20 @@ import { Pool } from 'pg';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const pool = new Pool({
-    user: process.env.DB_USER,        
-    host: process.env.DB_HOST,      
-    database: process.env.DB_NAME, 
-    password: process.env.DB_PASSWORD, 
-    port: process.env.DB_PORT, 
+const ssl = process.env.DB_SSL === 'true'
+    ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
+    : false;
 
-    max: 20, 
-    idleTimeoutMillis: 30000, 
-    connectionTimeoutMillis: 2000, 
+const pool = new Pool({
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_NAME,
+    password: process.env.DB_PASSWORD,
+    port: process.env.DB_PORT,
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 10000,
+    ssl
 });
 
 

@@ -6,9 +6,11 @@ class ParteService {
 
   async getAll() {
     const partes = await this.repository.getAll();
-    if (!partes || partes.length === 0) {
-      throw { status: 404, message: 'Nenhuma parte encontrada' };
-    }
+    return partes;
+  }
+
+  async getMine({ userId, email }) {
+    const partes = await this.repository.getMine(Number(userId), String(email));
     return partes;
   }
 
@@ -27,6 +29,9 @@ class ParteService {
     if (!parte.id_usuario && !parte.id_pessoa) {
       throw { status: 400, message: 'Informe id_usuario ou id_pessoa' };
     }
+    if (parte.id_pessoa && ![10, 11, 12].includes(parte.id_papel)) {
+      throw { status: 400, message: 'id_papel deve ser VITIMA, REU ou TESTEMUNHA quando relacionado a pessoa' };
+    }
     const created = await this.repository.create({
       id_processo: parte.id_processo,
       id_usuario: parte.id_usuario,
@@ -36,6 +41,11 @@ class ParteService {
       criado_por: parte.criado_por
     });
     return created;
+  }
+
+  async getByPessoaId(pessoaId) {
+    const partes = await this.repository.getByPessoaId(Number(pessoaId));
+    return partes;
   }
 
   async update(id, { id_processo, id_usuario, id_pessoa, id_papel, data_criacao, criado_por }) {

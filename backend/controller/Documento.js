@@ -5,7 +5,8 @@ class DocumentoController {
 
     getAll = async (req, res) => {
         try {
-            const documentos = await this.service.getAll();
+            const { id, email } = req.user || {};
+            const documentos = await this.service.getMine({ userId: id, email });
             res.status(200).json(documentos);
         } catch (error) {
             res.status(error.status || 500).json({ message: error.message || 'Erro interno do servidor' });
@@ -58,6 +59,22 @@ class DocumentoController {
             const { id } = req.params;
             const deleted = await this.service.delete(Number(id));
             res.status(200).json({ id: deleted.id });
+        } catch (error) {
+            res.status(error.status || 500).json({ message: error.message || 'Erro interno do servidor' });
+        }
+    };
+
+    upload = async (req, res) => {
+        try {
+            const { nome, tipo, id_processo } = req.body;
+            const file = req.file;
+            const created = await this.service.create({
+                nome,
+                tipo,
+                id_processo: Number(id_processo),
+                url_arquivo: `/uploads/${file.filename}`
+            });
+            res.status(201).json(created);
         } catch (error) {
             res.status(error.status || 500).json({ message: error.message || 'Erro interno do servidor' });
         }

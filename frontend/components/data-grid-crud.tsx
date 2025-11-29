@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { Checkbox } from '@/components/ui/checkbox'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
@@ -37,10 +38,27 @@ export function DataGridCRUD({
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [editingItem, setEditingItem] = useState<any>(null)
+  const [selectedIds, setSelectedIds] = useState<number[]>([])
+  const [isAdmin, setIsAdmin] = useState(false)
   const { toast } = useToast()
 
   useEffect(() => {
     loadData()
+  }, [])
+
+  useEffect(() => {
+    const handler = () => loadData()
+    if (typeof window !== 'undefined') window.addEventListener('app:refresh', handler)
+    return () => {
+      if (typeof window !== 'undefined') window.removeEventListener('app:refresh', handler)
+    }
+  }, [])
+
+  useEffect(() => {
+    const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null
+    const user = userStr ? JSON.parse(userStr) : null
+    const admin = String(user?.papel_sistema || '').toUpperCase() === 'ADMIN'
+    setIsAdmin(admin)
   }, [])
 
   const loadData = async () => {
@@ -74,6 +92,9 @@ export function DataGridCRUD({
       try {
         await onDelete(id)
         await loadData()
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('app:refresh'))
+        }
         toast({
           title: 'Sucesso',
           description: 'Item deletado com sucesso',
@@ -92,12 +113,16 @@ export function DataGridCRUD({
     try {
       if (editingItem) {
         await onUpdate(editingItem.id, formData)
+        setData((prev) => prev.map((it) => (it.id === editingItem.id ? { ...it, ...formData } : it)))
         toast({
           title: 'Sucesso',
           description: 'Item atualizado com sucesso',
         })
       } else {
-        await onCreate(formData)
+        const created = await onCreate(formData)
+        if (created && typeof created === 'object') {
+          setData((prev) => [created, ...prev])
+        }
         toast({
           title: 'Sucesso',
           description: 'Item criado com sucesso',
@@ -105,6 +130,9 @@ export function DataGridCRUD({
       }
       setIsModalOpen(false)
       await loadData()
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('app:refresh'))
+      }
     } catch (error) {
       toast({
         title: 'Erro',
@@ -112,6 +140,19 @@ export function DataGridCRUD({
         variant: 'destructive',
       })
     }
+  }
+
+  const isAllSelected = data.length > 0 && selectedIds.length === data.length
+
+  const toggleAll = (checked: boolean) => {
+    setSelectedIds(checked ? data.map((d) => d.id) : [])
+  }
+
+  const toggleOne = (id: number, checked: boolean) => {
+    setSelectedIds((prev) => {
+      if (checked) return prev.includes(id) ? prev : [...prev, id]
+      return prev.filter((x) => x !== id)
+    })
   }
 
   return (
@@ -133,6 +174,14 @@ export function DataGridCRUD({
             <Table>
               <TableHeader>
                 <TableRow>
+                  {isAdmin && (
+                    <TableHead className="w-8">
+                      <Checkbox
+                        checked={isAllSelected}
+                        onCheckedChange={(v) => toggleAll(!!v)}
+                      />
+                    </TableHead>
+                  )}
                   {columns.map((col) => (
                     <TableHead key={col.key}>{col.label}</TableHead>
                   ))}
@@ -142,6 +191,14 @@ export function DataGridCRUD({
               <TableBody>
                 {data.map((item) => (
                   <TableRow key={item.id}>
+                    {isAdmin && (
+                      <TableCell className="w-8">
+                        <Checkbox
+                          checked={selectedIds.includes(item.id)}
+                          onCheckedChange={(v) => toggleOne(item.id, !!v)}
+                        />
+                      </TableCell>
+                    )}
                     {columns.map((col) => (
                       <TableCell key={col.key}>{item[col.key]}</TableCell>
                     ))}

@@ -12,6 +12,14 @@ class LocalizacaoFisicaService {
     return localizacoes;
   }
 
+  async getMine({ userId, email }) {
+    const localizacoes = await this.repository.getMine(Number(userId), String(email));
+    if (!localizacoes || localizacoes.length === 0) {
+      throw { status: 404, message: 'Nenhuma localização física encontrada' };
+    }
+    return localizacoes;
+  }
+
   async getById(id) {
     if (!id) throw { status: 400, message: 'ID é obrigatório' };
     const localizacao = await this.repository.getById(Number(id));

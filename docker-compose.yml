@@ -1,0 +1,53 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:16
+    container_name: jurisdex-db
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./backend/database/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+
+  backend:
+    image: juridexapi:2.1
+    container_name: jurisdex-backend
+    environment:
+      - PORT=${PORT}
+      - JWT_SECRET=${JWT_SECRET}
+      - CORS_ORIGIN=${CORS_ORIGIN}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
+    ports:
+      - "3000:3000"
+    # Conecta em banco local (host.docker.internal); db do compose é opcional
+    networks:
+      - sql-com
+    restart: unless-stopped
+
+  frontend:
+    image: front_jurisdex:latest
+    container_name: jurisdex-front
+    environment:
+      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+    ports:
+      - "3001:3001"
+    networks:
+      - sql-com
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+
+networks:
+  sql-com:
+    driver: bridge

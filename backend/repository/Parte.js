@@ -1,14 +1,40 @@
 class ParteRepository {
   async getAll() {
-    const query = 'SELECT id, id_processo, id_usuario, id_pessoa, id_papel, data_criacao, criado_por FROM partes';
+    const query = `
+      SELECT pa.id, pa.id_processo, p.numero_processo, pa.id_usuario, pa.id_pessoa, pa.id_papel, pa.data_criacao, pa.criado_por
+      FROM partes pa
+      JOIN processos p ON p.id = pa.id_processo
+    `;
     const result = await db.query(query);
     return result.rows;
   }
 
+  async getMine(userId, email) {
+    const query = `
+      SELECT pa.id, pa.id_processo, p.numero_processo, pa.id_usuario, pa.id_pessoa, pa.id_papel, pa.data_criacao, pa.criado_por
+      FROM partes pa
+      JOIN processos p ON p.id = pa.id_processo
+      WHERE pa.id_usuario = $1 OR pa.criado_por = $2
+    `;
+    const result = await db.query(query, [userId, email]);
+    return result.rows;
+  }
+
   async getById(id) {
-    const query = 'SELECT id, id_processo, id_usuario, id_pessoa, id_papel, data_criacao, criado_por FROM partes WHERE id = $1';
+    const query = `
+      SELECT pa.id, pa.id_processo, p.numero_processo, pa.id_usuario, pa.id_pessoa, pa.id_papel, pa.data_criacao, pa.criado_por
+      FROM partes pa
+      JOIN processos p ON p.id = pa.id_processo
+      WHERE pa.id = $1
+    `;
     const result = await db.query(query, [id]);
     return result.rows[0];
+  }
+
+  async getByPessoaId(pessoaId) {
+    const query = 'SELECT id, id_processo, id_usuario, id_pessoa, id_papel, data_criacao, criado_por FROM partes WHERE id_pessoa = $1';
+    const result = await db.query(query, [pessoaId]);
+    return result.rows;
   }
 
   async create({ id_processo, id_usuario, id_pessoa, id_papel, data_criacao, criado_por }) {

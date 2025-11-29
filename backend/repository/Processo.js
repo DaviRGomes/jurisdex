@@ -8,6 +8,41 @@ class ProcessoRepository {
     return result.rows;
   }
 
+  async getMine(userId, email) {
+    const query = `
+      SELECT p.id, p.numero_processo, p.data_abertura, p.situacao, p.data_criacao, p.data_atualizacao
+      FROM processos p
+      WHERE EXISTS (
+        SELECT 1 FROM partes pa
+        WHERE pa.id_processo = p.id
+          AND (pa.id_usuario = $1 OR pa.criado_por = $2)
+      )
+    `;
+    const result = await db.query(query, [userId, email]);
+    return result.rows;
+  }
+
+  async countAll() {
+    const query = `SELECT COUNT(*)::int AS count FROM processos`;
+    const result = await db.query(query);
+    console.log('Count all result:', result.rows);
+    return result.rows[0]?.count ?? 0;
+  }
+
+  async countMine(userId, email) {
+    const query = `
+      SELECT COUNT(*)::int AS count
+      FROM processos p
+      WHERE EXISTS (
+        SELECT 1 FROM partes pa
+        WHERE pa.id_processo = p.id
+          AND (pa.id_usuario = $1 OR pa.criado_por = $2)
+      )
+    `;
+    const result = await db.query(query, [userId, email]);
+    return result.rows[0]?.count ?? 0;
+  }
+
   async getById(id) {
     const query = `
       SELECT id, numero_processo, data_abertura, situacao, data_criacao, data_atualizacao

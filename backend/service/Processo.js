@@ -12,6 +12,25 @@ class ProcessoService {
     return processos;
   }
 
+  async getMine({ userId, email, papel }) {
+    const isAdmin = String(papel || '').toUpperCase() === 'ADMIN'
+    const processos = isAdmin
+      ? await this.repository.getAll()
+      : await this.repository.getMine(Number(userId), String(email))
+    if (!processos || processos.length === 0) {
+      throw { status: 404, message: 'Nenhum processo encontrado' };
+    }
+    return processos;
+  }
+
+  async getCount({ userId, email, papel }) {
+    const isAdmin = String(papel || '').toUpperCase() === 'ADMIN'
+    const count = isAdmin
+      ? await this.repository.countAll()
+      : await this.repository.countMine(Number(userId), String(email))
+    return count;
+  }
+
   async getById(id) {
     if (!id) throw { status: 400, message: 'ID é obrigatório' };
     const processo = await this.repository.getById(Number(id));
@@ -31,6 +50,15 @@ class ProcessoService {
       data_criacao: processo.data_criacao,
       data_atualizacao: processo.data_atualizacao
     });
+
+    const locPayload = payload.localizacao || {};
+    await localizacaoService.create({
+      id_processo: created.id,
+      sala: locPayload.sala || 'A definir',
+      estante: locPayload.estante || 'A definir',
+      caixa: locPayload.caixa || 'A definir'
+    });
+
     return created;
   }
 
@@ -56,4 +84,5 @@ class ProcessoService {
 
 import Processo from '../model/Processo.js';
 import repository from '../repository/Processo.js';
+import localizacaoService from '../service/LocalizacaoFisica.js';
 export default new ProcessoService();
