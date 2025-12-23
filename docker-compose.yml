@@ -1,21 +1,22 @@
 version: '3.9'
 
 services:
+  # --- BANCO DE DADOS ---
   db:
     image: postgres:16
     container_name: jurisdex-db
     environment:
-      - POSTGRES_DB=${DB_NAME}         
-      - POSTGRES_USER=${DB_USER}       
-      - POSTGRES_PASSWORD=${DB_PASSWORD} 
-    ports:
-      - "5432:5432"
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./backend/database/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
     networks:
       - sql-com
+    # Porta 5432 removida por segurança (o backend acessa internamente)
 
+  # --- BACKEND ---
   backend:
     build: ./backend
     container_name: jurisdex-backend
@@ -23,8 +24,8 @@ services:
       - PORT=${PORT}
       - JWT_SECRET=${JWT_SECRET}
       - CORS_ORIGIN=${CORS_ORIGIN}
-      - DB_HOST=db        
-      - DB_PORT=5432                  
+      - DB_HOST=db
+      - DB_PORT=5432
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
@@ -34,6 +35,7 @@ services:
       - sql-com
     restart: unless-stopped
 
+  # --- FRONTEND ---
   frontend:
     build: ./frontend
     container_name: jurisdex-front
@@ -46,6 +48,21 @@ services:
     depends_on:
       - backend
     restart: unless-stopped
+
+  # --- NGINX PROXY MANAGER (O "Recepcionista") ---
+  nginx-proxy:
+    image: 'jc21/nginx-proxy-manager:latest'
+    container_name: nginx-proxy-manager
+    restart: unless-stopped
+    ports:
+      - '80:80'             
+      - '81:81'             
+      - '443:443'            
+    volumes:
+      - ./nginx/data:/data
+      - ./nginx/letsencrypt:/etc/letsencrypt
+    networks:
+      - sql-com
 
 volumes:
   pgdata:
