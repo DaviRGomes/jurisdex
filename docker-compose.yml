@@ -5,27 +5,26 @@ services:
     image: postgres:16
     container_name: jurisdex-db
     environment:
-      - POSTGRES_DB=${POSTGRES_DB}
-      - POSTGRES_USER=${POSTGRES_USER}
-      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${DB_NAME}         
+      - POSTGRES_USER=${DB_USER}       
+      - POSTGRES_PASSWORD=${DB_PASSWORD} 
     ports:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # Verifique se esse caminho abaixo está correto na sua VPS
       - ./backend/database/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
     networks:
       - sql-com
 
   backend:
-    build: ./backend  
+    build: ./backend
     container_name: jurisdex-backend
     environment:
       - PORT=${PORT}
       - JWT_SECRET=${JWT_SECRET}
       - CORS_ORIGIN=${CORS_ORIGIN}
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
+      - DB_HOST=db        
+      - DB_PORT=5432                  
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
@@ -36,7 +35,7 @@ services:
     restart: unless-stopped
 
   frontend:
-    build: ./frontend 
+    build: ./frontend
     container_name: jurisdex-front
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
