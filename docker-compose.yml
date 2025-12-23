@@ -1,7 +1,6 @@
 version: '3.9'
 
 services:
-  # --- BANCO DE DADOS ---
   db:
     image: postgres:16
     container_name: jurisdex-db
@@ -13,60 +12,50 @@ services:
       - pgdata:/var/lib/postgresql/data
       - ./backend/database/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
     networks:
-      - sql-com
-    # Porta 5432 removida por segurança (o backend acessa internamente)
+      - jurisdex-network
 
-  # --- BACKEND ---
   backend:
     build: ./backend
     container_name: jurisdex-backend
     environment:
       - PORT=${PORT}
       - JWT_SECRET=${JWT_SECRET}
-      - CORS_ORIGIN=${CORS_ORIGIN}
+      - CORS_ORIGIN=https://jurisdex.duckdns.org  
       - DB_HOST=db
       - DB_PORT=5432
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
-    ports:
-      - "3000:3000"
     networks:
-      - sql-com
+      - jurisdex-network
     restart: unless-stopped
 
-  # --- FRONTEND ---
   frontend:
     build: ./frontend
     container_name: jurisdex-front
     environment:
-      - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
-    ports:
-      - "3001:3001"
+      - NEXT_PUBLIC_API_URL=https://api-jurisdex.duckdns.org
     networks:
-      - sql-com
-    depends_on:
-      - backend
+      - jurisdex-network
     restart: unless-stopped
 
-  # --- NGINX PROXY MANAGER (O "Recepcionista") ---
   nginx-proxy:
     image: 'jc21/nginx-proxy-manager:latest'
     container_name: nginx-proxy-manager
     restart: unless-stopped
     ports:
-      - '80:80'             
-      - '81:81'             
-      - '443:443'            
+      - '80:80'
+      - '81:81'
+      - '443:443'
     volumes:
       - ./nginx/data:/data
       - ./nginx/letsencrypt:/etc/letsencrypt
     networks:
-      - sql-com
+      - jurisdex-network
 
 volumes:
   pgdata:
 
 networks:
-  sql-com:
+  jurisdex-network:
     driver: bridge
