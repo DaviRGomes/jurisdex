@@ -1,4 +1,5 @@
 version: '3.9'
+
 services:
   db:
     image: postgres:16
@@ -11,10 +12,13 @@ services:
       - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+      # Verifique se esse caminho abaixo está correto na sua VPS
       - ./backend/database/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
+    networks:
+      - sql-com
 
   backend:
-    image: juridexapi:2.1
+    build: ./backend  
     container_name: jurisdex-backend
     environment:
       - PORT=${PORT}
@@ -27,13 +31,12 @@ services:
       - DB_NAME=${DB_NAME}
     ports:
       - "3000:3000"
-    # Conecta em banco local (host.docker.internal); db do compose é opcional
     networks:
       - sql-com
     restart: unless-stopped
 
   frontend:
-    image: front_jurisdex:latest
+    build: ./frontend 
     container_name: jurisdex-front
     environment:
       - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
