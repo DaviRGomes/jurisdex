@@ -1,61 +1,50 @@
-version: '3.9'
-
 services:
+  # O Banco de Dados
   db:
-    image: postgres:16
+    image: postgres:15
     container_name: jurisdex-db
+    restart: unless-stopped
     environment:
-      - POSTGRES_DB=${DB_NAME}
-      - POSTGRES_USER=${DB_USER}
-      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-jurisdex}
+      POSTGRES_USER: ${DB_USER:-admin}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-jurisdex_secure_password}
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./backend/database/seed.sql:/docker-entrypoint-initdb.d/seed.sql:ro
     networks:
-      - jurisdex-network
+      - rede_global_nginx
 
+  # O Backend
   backend:
     build: ./backend
     container_name: jurisdex-backend
-    environment:
-      - PORT=${PORT}
-      - JWT_SECRET=${JWT_SECRET}
-      - CORS_ORIGIN=https://jurisdex.duckdns.org  
-      - DB_HOST=db
-      - DB_PORT=5432
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
-    networks:
-      - jurisdex-network
     restart: unless-stopped
+    expose:
+      - "3001"
+    env_file:
+      - ./backend/.env
+    depends_on:
+      - db
+    networks:
+      - rede_global_nginx
 
+  # O Frontend
   frontend:
     build: ./frontend
-    container_name: jurisdex-front
-    environment:
-      - NEXT_PUBLIC_API_URL=https://api-jurisdex.duckdns.org
-    networks:
-      - jurisdex-network
+    container_name: jurisdex-frontend
     restart: unless-stopped
+    expose:
+      - "3000"
+    env_file:
+      - ./frontend/.env
+    depends_on:
+      - backend
+    networks:
+      - rede_global_nginx
 
-  nginx-proxy:
-    image: 'jc21/nginx-proxy-manager:latest'
-    container_name: nginx-proxy-manager
-    restart: unless-stopped
-    ports:
-      - '80:80'
-      - '81:81'
-      - '443:443'
-    volumes:
-      - ./nginx/data:/data
-      - ./nginx/letsencrypt:/etc/letsencrypt
-    networks:
-      - jurisdex-network
+networks:
+  rede_global_nginx:
+    external: true
 
 volumes:
   pgdata:
-
-networks:
-  jurisdex-network:
-    driver: bridge
